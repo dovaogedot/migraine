@@ -1,0 +1,12 @@
+[package]
+name = "migraine"
+version = "0.1.0"
+authors = ["dovaogedot"]
+edition = "2024"
+description = "Restores pixel art to its original dimensions, pixelates images"
+readme = "README.md"
+keywords = ["image", "resize", "pixelart", "pixel", "art"]
+
+[dependencies]
+clap = { version = "4.6.1", features = ["derive"] }
+image_lib = { package = "image", version = "0.25.10" }

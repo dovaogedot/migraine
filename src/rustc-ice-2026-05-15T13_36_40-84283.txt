@@ -1,0 +1,45 @@
+thread 'main' panicked at /rustc-dev/cf7da0b7277cad05b79f91b60c290aa08a17a6f0/library/core/src/slice/index.rs:1031:55:
+slice index starts at 16 but ends at 14
+stack backtrace:
+   0:     0x7afea8d6930b - <std[31d5fcd3a7c3b67]::backtrace::Backtrace>::create
+   1:     0x7afea8d69255 - <std[31d5fcd3a7c3b67]::backtrace::Backtrace>::force_capture
+   2:     0x7afea7d807bb - std[31d5fcd3a7c3b67]::panicking::update_hook::<alloc[c4bfd22de8009e62]::boxed::Box<rustc_driver_impl[c10b5635ac5236f4]::install_ice_hook::{closure#1}>>::{closure#0}
+   3:     0x7afea8d7b892 - std[31d5fcd3a7c3b67]::panicking::panic_with_hook
+   4:     0x7afea8d5e278 - std[31d5fcd3a7c3b67]::panicking::panic_handler::{closure#0}
+   5:     0x7afea8d527c9 - std[31d5fcd3a7c3b67]::sys::backtrace::__rust_end_short_backtrace::<std[31d5fcd3a7c3b67]::panicking::panic_handler::{closure#0}, !>
+   6:     0x7afea8d5fcdd - __rustc[ddcdad3db97d047c]::rust_begin_unwind
+   7:     0x7afea5ec058c - core[eb3b6d8a337d2ada]::panicking::panic_fmt
+   8:     0x7afea65fff3d - core[eb3b6d8a337d2ada]::slice::index::slice_index_fail
+   9:     0x7afea7613655 - <annotate_snippets[ff0b7bb1cbef2cf3]::renderer::styled_buffer::StyledBuffer>::replace
+  10:     0x7afeaa6e9b02 - annotate_snippets[ff0b7bb1cbef2cf3]::renderer::render::render
+  11:     0x7afeaa91cae1 - <rustc_errors[a25fa99a0024664c]::annotate_snippet_emitter_writer::AnnotateSnippetEmitter>::emit_messages_default
+  12:     0x7afeaa91545b - <rustc_errors[a25fa99a0024664c]::annotate_snippet_emitter_writer::AnnotateSnippetEmitter as rustc_errors[a25fa99a0024664c]::emitter::Emitter>::emit_diagnostic
+  13:     0x55c213dad860 - <rustfmt_nightly[a656fa77e5953492]::parse::session::SilentOnIgnoredFilesEmitter as rustc_errors[a25fa99a0024664c]::emitter::Emitter>::emit_diagnostic
+  14:     0x7afeaa912bb0 - <rustc_errors[a25fa99a0024664c]::DiagCtxtInner>::emit_diagnostic::{closure#3}
+  15:     0x7afea7da2611 - rustc_errors[a25fa99a0024664c]::default_track_diagnostic::<core[eb3b6d8a337d2ada]::option::Option<rustc_span[9ca402cc1729ed18]::ErrorGuaranteed>>
+  16:     0x7afeaa90f771 - <rustc_errors[a25fa99a0024664c]::DiagCtxtInner>::emit_diagnostic
+  17:     0x7afeaa90f61f - <rustc_errors[a25fa99a0024664c]::DiagCtxtHandle>::emit_diagnostic
+  18:     0x7afea5588f9a - <rustc_span[9ca402cc1729ed18]::ErrorGuaranteed as rustc_errors[a25fa99a0024664c]::diagnostic::EmissionGuarantee>::emit_producing_guarantee
+  19:     0x7afeaa0d7224 - <rustc_parse[abb9747d1123b95a]::parser::Parser>::parse_record_struct_body
+  20:     0x7afeaa0db7be - <rustc_parse[abb9747d1123b95a]::parser::Parser>::parse_item_struct
+  21:     0x7afea96d5add - <rustc_parse[abb9747d1123b95a]::parser::Parser>::parse_item_kind
+  22:     0x7afea96d1497 - <rustc_parse[abb9747d1123b95a]::parser::Parser>::parse_item_common
+  23:     0x7afea96370a3 - <rustc_parse[abb9747d1123b95a]::parser::Parser>::parse_mod
+  24:     0x7afea6826cb3 - <rustc_parse[abb9747d1123b95a]::parser::Parser>::parse_crate_mod
+  25:     0x55c213d21598 - <rustfmt_nightly[a656fa77e5953492]::parse::parser::Parser>::parse_crate
+  26:     0x55c213c4831d - <scoped_tls[f3742cbe72df4ef2]::ScopedKey<rustc_span[9ca402cc1729ed18]::SessionGlobals>>::with::<<rustfmt_nightly[a656fa77e5953492]::Session<std[31d5fcd3a7c3b67]::io::stdio::Stdout>>::format_input_inner::{closure#0}, core[eb3b6d8a337d2ada]::result::Result<rustfmt_nightly[a656fa77e5953492]::FormatReport, rustfmt_nightly[a656fa77e5953492]::ErrorKind>>
+  27:     0x55c213c4324f - rustfmt[e15e0e4e2a64f2a9]::format_and_emit_report::<std[31d5fcd3a7c3b67]::io::stdio::Stdout>
+  28:     0x55c213c57fd5 - rustfmt[e15e0e4e2a64f2a9]::execute
+  29:     0x55c213c538a6 - rustfmt[e15e0e4e2a64f2a9]::main
+  30:     0x55c213c51e33 - std[31d5fcd3a7c3b67]::sys::backtrace::__rust_begin_short_backtrace::<fn(), ()>
+  31:     0x55c213c52519 - std[31d5fcd3a7c3b67]::rt::lang_start::<()>::{closure#0}
+  32:     0x7afeaa61c424 - std[31d5fcd3a7c3b67]::rt::lang_start_internal
+  33:     0x55c213c63298 - main
+  34:     0x7afea3e27741 - <unknown>
+  35:     0x7afea3e27879 - __libc_start_main
+  36:     0x55c213b3e579 - <unknown>
+  37:                0x0 - <unknown>
+
+
+rustc version: 1.96.0-nightly (cf7da0b72 2026-03-30)
+platform: x86_64-unknown-linux-gnu

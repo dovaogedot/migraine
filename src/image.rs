@@ -6,7 +6,6 @@ pub trait Image {
     fn width(&self) -> u32;
     fn height(&self) -> u32;
     fn sample(&self, x: u32, y: u32) -> Color;
-    fn to_buffer(&self) -> Vec<u8>;
 }
 
 impl Image for DynamicImage {
@@ -26,15 +25,11 @@ impl Image for DynamicImage {
             b: p[2],
         }
     }
-
-    fn to_buffer(&self) -> Vec<u8> {
-        todo!("Image::buffer not implemented for DynamicImage")
-    }
 }
 
 pub struct SimpleImage {
-    pixels: Vec<Color>,
-    scansize: usize,
+    pub pixels: Vec<Color>,
+    pub scansize: usize,
 }
 
 impl SimpleImage {
@@ -55,9 +50,5 @@ impl Image for SimpleImage {
     fn sample(&self, x: u32, y: u32) -> Color {
         let idx = y * self.scansize as u32 + x;
         self.pixels[idx as usize]
-    }
-    
-    fn to_buffer(&self) -> Vec<u8> {
-        self.pixels.iter().flat_map(|c| [c.r, c.g, c.b]).collect()
     }
 }

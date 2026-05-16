@@ -1,5 +1,3 @@
-use std::ops::Div;
-
 #[derive(Clone, Copy, Debug, PartialEq, Hash, Eq)]
 pub struct Color {
     pub r: u8,

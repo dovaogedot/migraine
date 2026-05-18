@@ -1,10 +1,11 @@
-use std::collections::HashMap;
-
 use crate::{
-    color::Color,
-    kmean::{Centroid, Distance, Same, kmeans},
+    algorithm::kmeans::{Centroid, Distance, Same},
+    types::Color,
 };
 
+/// Holds a color and number of its occurences.
+/// 
+/// Used to reduce palette colors.
 #[derive(Clone, Copy, Debug, PartialEq, Hash, Eq)]
 pub struct ColorFrequency {
     pub color: Color,
@@ -55,25 +56,4 @@ impl From<(&Color, &u32)> for ColorFrequency {
             count: *freq.1,
         }
     }
-}
-
-pub fn reduce_palette(colors: &[Color], palette_size: u32) -> Vec<Color> {
-    let mut occurences: Vec<ColorFrequency> = colors
-        .iter()
-        .fold(HashMap::<Color, u32>::new(), |mut acc, c| {
-            *acc.entry(*c).or_insert(0) += 1;
-            acc
-        })
-        .iter()
-        .map(ColorFrequency::from)
-        .collect::<Vec<_>>();
-
-    occurences.sort_by(|a, b| b.count.cmp(&a.count));
-
-    let palette: Vec<Color> = kmeans(palette_size as usize, &occurences)
-        .iter()
-        .map(|c| ColorFrequency::centroid(c).color)
-        .collect();
-
-    palette
 }

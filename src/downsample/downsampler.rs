@@ -1,44 +1,7 @@
 use crate::{
-    color::Color,
-    image::{Image, SimpleImage},
+    downsample::SamplePattern,
+    types::{Color, Image, SimpleImage},
 };
-
-pub struct SamplePattern {
-    /// Array of positions within the pixel.
-    ///
-    /// ```
-    ///  (-1, 1) +---------+ (1, 1)
-    ///          |    |    |
-    ///          |--(0,0)--|
-    ///          |    |    |
-    /// (-1, -1) +---------+ (1, -1)
-    /// ```
-    positions: Vec<(f64, f64)>,
-}
-
-impl SamplePattern {
-    pub fn new(positions: Vec<(f64, f64)>) -> Self {
-        SamplePattern { positions }
-    }
-
-    pub fn combine(&self, other: &Self) -> Self {
-        let mut positions = self.positions.clone();
-        positions.extend(&other.positions);
-        SamplePattern { positions }
-    }
-
-    pub fn center() -> Self {
-        SamplePattern {
-            positions: vec![(0.0, 0.0)],
-        }
-    }
-
-    pub fn grid() -> Self {
-        let d = 0.5;
-        let positions = vec![(-d, d), (d, d), (-d, -d), (d, -d)];
-        SamplePattern { positions }
-    }
-}
 
 pub struct Downsampler {}
 impl Downsampler {
@@ -82,11 +45,17 @@ impl Downsampler {
                 let avg_g = (sum_g / total) as u8;
                 let avg_b = (sum_b / total) as u8;
 
-                let color = Color::new((avg_r, avg_g, avg_b));
+                let color = Color::new(avg_r, avg_g, avg_b);
                 pixels.push(color)
             }
         }
 
         SimpleImage::new(pixels, target_width as usize)
+    }
+}
+
+impl Default for Downsampler {
+    fn default() -> Self {
+        Self {}
     }
 }

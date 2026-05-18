@@ -1,7 +1,7 @@
 use std::time::{Duration, Instant};
 
 use crate::{
-    algorithm::kmeans::{Centroid, kmeans},
+    algorithm::{kmeans::Centroid, kmeans_pp::kmeans_pp},
     downsample::{Downsampler, SamplePattern},
     error::MigraineError,
     scale::{otsu, scale_guesser::ScaleGuesser as _},
@@ -72,12 +72,8 @@ pub fn restore(
 
     let start = Instant::now();
 
-    let downsampled: SimpleImage = downsampler.downsample(
-        &image,
-        target_width,
-        target_height,
-        sample_pattern,
-    );
+    let downsampled: SimpleImage =
+        downsampler.downsample(&image, target_width, target_height, sample_pattern);
 
     let (final_image, palette): (SimpleImage, Palette) = if reduce_palette {
         let palette = reduce(
@@ -106,7 +102,7 @@ pub fn restore(
 }
 
 pub fn reduce(colors: &[Color], palette_size: u32) -> Palette {
-    let palette: Vec<Color> = kmeans(palette_size as usize, colors)
+    let palette: Vec<Color> = kmeans_pp(palette_size as usize, colors)
         .iter()
         .map(|c| Color::centroid(c))
         .collect();

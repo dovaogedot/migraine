@@ -41,11 +41,11 @@ pub trait Same {
 ///
 /// let k = 2;
 /// let points = vec![Point(3), Point(1), Point(9), Point(11), Point(8)];
-///
-/// let clusters = kmeans(k, points);
+/// let initial_clusters = points.iter().take(4).cloned().collect();
+/// let clusters = kmeans(k, points, initial_clusters);
 /// assert_eq!(clusters.len(), 2);
 /// ```
-pub fn kmeans<P>(k: usize, points: &[P]) -> Vec<Vec<P>>
+pub fn kmeans<P>(k: usize, points: &[P], initial_centroids: Vec<P>) -> Vec<Vec<P>>
 where
     P: Centroid + Distance + Same + Clone,
 {
@@ -54,9 +54,9 @@ where
         points.len() >= k,
         "Number of points should not be less than number of clusters"
     );
-
+    
     // Initialize centroids
-    let mut centroids: Vec<P> = points.iter().take(k).cloned().collect();
+    let mut centroids = initial_centroids;
     let mut converged = false;
     let mut clusters: Vec<Vec<P>> = Vec::with_capacity(k);
 

@@ -1,14 +1,11 @@
-use std::{
-    collections::HashMap,
-    time::{Duration, Instant},
-};
+use std::time::{Duration, Instant};
 
 use crate::{
     algorithm::kmeans::{Centroid, kmeans},
     downsample::{Downsampler, SamplePattern},
     error::MigraineError,
     scale::{otsu, scale_guesser::ScaleGuesser as _},
-    types::{Color, ColorFrequency, Image, Palette, SimpleImage},
+    types::{Color, Image, Palette, SimpleImage},
 };
 
 pub struct MigraineResult {
@@ -28,7 +25,7 @@ pub fn restore(
     let image_width = image.width() as f64;
     let image_height = image.height() as f64;
 
-    let dimensions: (f64, f64, f64) = match (scale, width, height) {
+    let (scale, width, height): (f64, f64, f64) = match (scale, width, height) {
         (None, None, None) => {
             let scale_guesser = otsu::OtsuGuesser::new();
             let scales = scale_guesser.guess(&image);
@@ -63,23 +60,22 @@ pub fn restore(
         (_, _, _) => return Err(MigraineError::SuppliedBothDimensionsAndScale),
     };
 
-    let scale = dimensions.0;
-    let target_width = dimensions.1;
-    let target_height = dimensions.2;
+    let target_width = width.round() as u32;
+    let target_height = height.round() as u32;
 
     println!("Using scale {scale:?}");
     println!("Target width {target_width:?}");
     println!("Target height {target_height:?}");
 
     let downsampler = Downsampler::default();
-    let sample_pattern = SamplePattern::combine(&SamplePattern::grid(), &SamplePattern::center());
+    let sample_pattern = SamplePattern::default();
 
     let start = Instant::now();
 
     let downsampled: SimpleImage = downsampler.downsample(
         &image,
-        target_width.round() as u32,
-        target_height.round() as u32,
+        target_width,
+        target_height,
         sample_pattern,
     );
 
@@ -110,21 +106,9 @@ pub fn restore(
 }
 
 pub fn reduce(colors: &[Color], palette_size: u32) -> Palette {
-    let mut occurences: Vec<ColorFrequency> = colors
+    let palette: Vec<Color> = kmeans(palette_size as usize, colors)
         .iter()
-        .fold(HashMap::<Color, u32>::new(), |mut acc, c| {
-            *acc.entry(*c).or_insert(0) += 1;
-            acc
-        })
-        .iter()
-        .map(ColorFrequency::from)
-        .collect::<Vec<_>>();
-
-    occurences.sort_by(|a, b| b.count.cmp(&a.count));
-
-    let palette: Vec<Color> = kmeans(palette_size as usize, &occurences)
-        .iter()
-        .map(|c| ColorFrequency::centroid(c).color)
+        .map(|c| Color::centroid(c))
         .collect();
 
     Palette::new(palette)

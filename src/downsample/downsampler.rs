@@ -19,33 +19,27 @@ impl Downsampler {
 
         for y in 0..target_height {
             for x in 0..target_width {
-                let samples: Vec<Color> = sample_pattern
-                    .positions
-                    .iter()
-                    .map(|(dx, dy)| {
-                        let sx = x as f64 * pixel_w + pixel_w * 0.5 * (dx + 1.0);
-                        let sy = y as f64 * pixel_h + pixel_h * 0.5 * (dy + 1.0);
-                        img.sample(sx.round() as u32, sy.round() as u32)
-                    })
-                    .collect();
+                let mut sum_r = 0f64;
+                let mut sum_g = 0f64;
+                let mut sum_b = 0f64;
 
-                let mut sum_r = 0u32;
-                let mut sum_g = 0u32;
-                let mut sum_b = 0u32;
+                let total_weight: f64 = sample_pattern.points.iter().map(|p| p.weight).sum();
 
-                samples.iter().for_each(|c| {
-                    sum_r += c.r as u32;
-                    sum_g += c.g as u32;
-                    sum_b += c.b as u32;
-                });
+                for point in &sample_pattern.points {
+                    let sx = x as f64 * pixel_w + pixel_w * 0.5 * (point.dx + 1.0);
+                    let sy = y as f64 * pixel_h + pixel_h * 0.5 * (point.dy + 1.0);
+                    let color = img.sample(sx.round() as u32, sy.round() as u32);
 
-                let total = sample_pattern.positions.len() as u32;
+                    sum_r += color.r * point.weight;
+                    sum_g += color.g * point.weight;
+                    sum_b += color.b * point.weight;
+                }
 
-                let avg_r = (sum_r / total) as u8;
-                let avg_g = (sum_g / total) as u8;
-                let avg_b = (sum_b / total) as u8;
-
-                let color = Color::new(avg_r, avg_g, avg_b);
+                let color = Color::new(
+                    sum_r / total_weight,
+                    sum_g / total_weight,
+                    sum_b / total_weight,
+                );
                 pixels.push(color)
             }
         }

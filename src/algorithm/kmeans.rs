@@ -52,7 +52,7 @@ where
     assert!(k > 0, "Number of cluster must be greater than zero");
     assert!(
         points.len() >= k,
-        "Number of points should not less than number of clusters"
+        "Number of points should not be less than number of clusters"
     );
 
     // Initialize centroids
@@ -79,13 +79,21 @@ where
         }
 
         // Recalculate centroids as the mean of each cluster
-        let new_centroids: Vec<P> = clusters.iter().map(|c| P::centroid(c)).collect();
+        let mut new_centroids = Vec::with_capacity(k);
+        for i in 0..k {
+            if clusters[i].is_empty() {
+                new_centroids.push(centroids[i].clone());
+            } else {
+                new_centroids.push(P::centroid(&clusters[i]))
+            }
+        }
 
         // Check for convergence
-        if new_centroids
-            .iter()
-            .zip(&centroids)
-            .all(|x| P::same(x.0, x.1))
+        if (new_centroids.len() == centroids.len())
+            && new_centroids
+                .iter()
+                .zip(&centroids)
+                .all(|(a, b)| P::same(a, b))
         {
             converged = true;
         } else {

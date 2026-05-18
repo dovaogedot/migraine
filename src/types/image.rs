@@ -28,9 +28,9 @@ impl Image for DynamicImage {
     fn sample(&self, x: u32, y: u32) -> Color {
         let p = self.get_pixel(x, y).to_rgb();
         Color {
-            r: p[0],
-            g: p[1],
-            b: p[2],
+            r: p[0] as f64,
+            g: p[1] as f64,
+            b: p[2] as f64,
         }
     }
 

@@ -31,9 +31,9 @@ impl Image for SimpleImage {
     fn into_buffer(self) -> Vec<u8> {
         let mut buffer = vec![];
         self.pixels.iter().for_each(|p| {
-            buffer.push(p.r);
-            buffer.push(p.g);
-            buffer.push(p.b);
+            buffer.push(p.r.round() as u8);
+            buffer.push(p.g.round() as u8);
+            buffer.push(p.b.round() as u8);
         });
         buffer
     }
@@ -43,7 +43,7 @@ impl From<DynamicImage> for SimpleImage {
     fn from(dynamic_image: DynamicImage) -> Self {
         let pixels = dynamic_image
             .pixels()
-            .map(|p| Color::new(p.2.0[0], p.2.0[1], p.2.0[2]))
+            .map(|p| Color::new(p.2.0[0] as f64, p.2.0[1] as f64, p.2.0[2] as f64))
             .collect();
         let scansize = dynamic_image.width() as usize;
         SimpleImage { pixels, scansize }

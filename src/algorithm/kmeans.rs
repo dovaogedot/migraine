@@ -1,15 +1,16 @@
-pub trait Centroid {
-    fn centroid(cluster: &[Self]) -> Self
-    where
-        Self: Sized;
+/// Centroid of a cluster.
+pub trait Centroid: Sized {
+    fn centroid(cluster: &[Self]) -> Self;
 }
 
-pub trait Distance {
+/// Distance metric between two points in a set.
+pub trait Distance: Sized {
     fn distance(a: &Self, b: &Self) -> f64;
 }
 
-pub trait Same {
-    fn same(a: &Self, b: &Self) -> bool;
+/// Metric used to decide whether two clusters are converged.
+pub trait Same: Sized {
+    fn same_clusters(a: &[Self], b: &[Self]) -> bool;
 }
 
 /// Implementation of naive k-means algorithm.
@@ -54,7 +55,7 @@ where
         points.len() >= k,
         "Number of points should not be less than number of clusters"
     );
-    
+
     // Initialize centroids
     let mut centroids = initial_centroids;
     let mut converged = false;
@@ -89,11 +90,7 @@ where
         }
 
         // Check for convergence
-        if (new_centroids.len() == centroids.len())
-            && new_centroids
-                .iter()
-                .zip(&centroids)
-                .all(|(a, b)| P::same(a, b))
+        if P::same_clusters(&new_centroids, &centroids)
         {
             converged = true;
         } else {

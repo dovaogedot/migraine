@@ -77,10 +77,16 @@ impl Distance for Color {
 }
 
 impl Same for Color {
-    fn same(a: &Self, b: &Self) -> bool {
-        a.r.sub(b.r).abs() < f64::EPSILON
-            && a.g.sub(b.g).abs() < f64::EPSILON
-            && a.b.sub(b.b).abs() < f64::EPSILON
+    fn same_clusters(a: &[Self], b: &[Self]) -> bool {
+        if a.len() != b.len() {
+            return false;
+        }
+
+        a.iter().zip(b).all(|(a, b)| {
+            a.r.sub(b.r).abs() < f64::EPSILON
+                && a.g.sub(b.g).abs() < f64::EPSILON
+                && a.b.sub(b.b).abs() < f64::EPSILON
+        })
     }
 }
 

@@ -1,10 +1,12 @@
-use std::time::{Duration, Instant};
+use std::{
+    ops::{Div, Sub},
+    time::{Duration, Instant},
+};
 
 use crate::{
     algorithm::{kmeans::Centroid, kmeans_pp::kmeans_pp},
     downsample::{Downsampler, SamplePattern},
     error::MigraineError,
-    scale::{otsu, scale_guesser::ScaleGuesser as _},
     types::{Color, Image, Palette, SimpleImage},
 };
 
@@ -27,9 +29,7 @@ pub fn restore(
 
     let (scale, width, height): (f64, f64, f64) = match (scale, width, height) {
         (None, None, None) => {
-            let scale_guesser = otsu::OtsuGuesser::new();
-            let scales = scale_guesser.guess(&image);
-            let s = scales[0];
+            let s = guess_pixel_size(&image);
             let w = image_width / s;
             let h = image_height / s;
             (s, w, h)
@@ -108,4 +108,90 @@ pub fn reduce(colors: &[Color], palette_size: u32) -> Palette {
         .collect();
 
     Palette::new(palette)
+}
+
+/// Guesses pixel size by shifting image horizontally and finding phases with smallest differences.
+///
+/// Turns out it's a variation of AMDF (Average Magnitude Difference Function) + Autocorrelation (YIN Algorithm)
+///
+/// TODO: cleanup space and time complexity
+pub fn guess_pixel_size(img: &impl Image) -> f64 {
+    let img_width = img.width();
+    let img_height = img.height();
+    let rows_to_sample = img.height().min(256);
+    let dy = (img.height() / rows_to_sample) as usize;
+
+    let rows: Vec<Vec<Color>> = (0..img_height)
+        .step_by(dy)
+        .map(|y| {
+            (0..img_width)
+                .map(move |x| img.sample(x, y.clone()))
+                .collect()
+        })
+        .collect();
+
+    // map pixel in each row to its color distance with the one next to it
+    let distances: Vec<Vec<f64>> = rows
+        .iter()
+        .map(|row| {
+            let mut r: Vec<f64> = row.windows(2).map(|w| w[0].distance(&w[1])).collect();
+            r.push(row[row.len() - 1].distance(&row[0]));
+            r
+        })
+        .collect();
+
+    // average distance to next pixel color in each column
+    let avg_distances: Vec<f64> = (0..distances[0].len())
+        .map(|i| {
+            distances
+                .iter()
+                .map(|row| row[i])
+                .sum::<f64>()
+                .div(distances.len() as f64)
+        })
+        .collect();
+
+    // for each column calculate difference between original graph and the one shifted by column index
+    let phase_differences: Vec<f64> = (1..avg_distances.len())
+        .map(|phase| {
+            (0..avg_distances.len())
+                .map(|current| {
+                    avg_distances[current]
+                        .sub(avg_distances[(current + phase) % avg_distances.len()])
+                        .abs()
+                })
+                .sum::<f64>()
+                .div(avg_distances.len() as f64)
+        })
+        .collect();
+
+    // find spikes where difference is the lowest
+    let local_minimums: Vec<usize> = phase_differences
+        .windows(3)
+        .enumerate()
+        .filter_map(|(i, w)| {
+            let left = w[0];
+            let mid = w[1];
+            let right = w[2];
+
+            if mid.total_cmp(&left).is_lt() && mid.total_cmp(&right).is_lt() {
+                Some(i + 1)
+            } else {
+                None
+            }
+        })
+        .collect();
+
+    println!("{}", local_minimums.len());
+
+    // sum up distances between spikes
+    let pixel_size_sum = local_minimums
+        .windows(2)
+        .map(|w| w[1] - w[0])
+        .sum::<usize>() as f64;
+
+    // get average distance
+    let pixel_size = pixel_size_sum.div(local_minimums.len() as f64);
+
+    pixel_size
 }

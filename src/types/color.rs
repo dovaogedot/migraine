@@ -56,7 +56,7 @@ impl Color {
         let r = self.r - other.r;
         let g = self.g - other.g;
         let b = self.b - other.b;
-        (r * r) * 0.3 + (g * g) * 0.59 + (b * b) * 0.11
+        ((r * r) * 0.3 + (g * g) * 0.59 + (b * b) * 0.11).sqrt()
     }
 }
 

@@ -15,7 +15,6 @@ mod args;
 mod downsample;
 mod error;
 mod migraine;
-mod scale;
 mod types;
 
 fn main() -> std::io::Result<()> {
@@ -23,14 +22,22 @@ fn main() -> std::io::Result<()> {
 
     let image = open_image(&args.path)?;
 
-    let result = migraine::restore(image, args.scale, args.width, args.height, args.reduce_palette, args.colors)?;
+    let result = migraine::restore(
+        image,
+        args.scale,
+        args.width,
+        args.height,
+        args.reduce_palette,
+        args.colors,
+    )?;
 
     println!("Processing took {}ms", result.time_spent.as_millis());
     println!("Approximated palette:\n{}", result.palette);
 
     let new_path_str = format!("{}_downsampled.bmp", args.path.to_string_lossy());
     let new_path = Path::new(&new_path_str);
-    save_image(result.image, &new_path)
+    save_image(result.image, &new_path)?;
+    Ok(())
 }
 
 fn open_image(path: &Path) -> std::io::Result<DynamicImage> {

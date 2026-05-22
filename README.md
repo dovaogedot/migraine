@@ -27,50 +27,14 @@ migraine -h
 ```
 
 ## Examples
+|||
+|-|-|
+|![Before](./samples/angel_200x200_5.4.webp)|![After](./samples/angel_200x200_5.4.webp_downsampled.bmp)|
+|![Before](./samples/sailor_160x144_4.png)|![After](./samples/sailor_160x144_4.png_downsampled.bmp)|
+|![Before](./samples/skull_167x174_6.67.png)|![After](./samples/skull_167x174_6.67.png_downsampled.bmp)|
+|![Before](./samples/sunset_252x142_7.62.jpg)|![After](./samples/sunset_252x142_7.62.jpg_downsampled.bmp)|
 
-<div class="grid">
-<div class="preview angel"> <img alt="Before" src="./samples/angel_200x200_5.4.webp"></div>
-<div class="preview angel"> <img alt="After" src="./samples/angel_200x200_5.4.webp_downsampled.bmp"></div>
-<div class="preview sailor"><img alt="Before" src="./samples/sailor_160x144_4.png"></div>
-<div class="preview sailor"><img alt="After" src="./samples/sailor_160x144_4.png_downsampled.bmp"></div>
-<div class="preview skull"> <img alt="Before" src="./samples/skull_167x174_6.67.png"></div>
-<div class="preview skull"> <img alt="After" src="./samples/skull_167x174_6.67.png_downsampled.bmp"></div>
-<div class="preview sunset"><img alt="Before" src="./samples/sunset_252x142_7.62.jpg"></div>
-<div class="preview sunset"><img alt="After" src="./samples/sunset_252x142_7.62.jpg_downsampled.bmp"></div>
-</div>
+## References
 
-<style>
-  .grid {
-    display: grid;
-    grid-template-rows: repeat(2, auto);
-    grid-auto-flow: column;
-    grid-auto-columns: minmax(16rem, 1fr);
-    gap: 1rem;
-  }
-  .preview {
-    width: 16rem;
-    height: 16rem;
-    overflow: hidden;
-  }
-  .preview > img {
-    max-height: unset;
-    image-rendering: optimizeSpeed;
-    image-rendering: pixelated;
-  }
-  .preview.angel > img {
-    min-width: 2000px;
-    transform: translate(-74%, -25%);
-  }
-  .preview.sailor > img {
-    min-width: 1600px;
-    transform: translate(-31%, -33%);
-  }
-  .preview.skull > img {
-    min-width: 2000px;
-    transform: translate(-22%, -64%);
-  }
-  .preview.sunset > img {
-    min-width: 4000px;
-    transform: translate(-77%, -40%);
-  }
-</style>
+- [AMDF (Average Magnitude Difference Function)](http://notedetection.weebly.com/amdf.html)
+- [YIN, a fundamental frequency estimator](http://audition.ens.fr/adc/pdf/2002_JASA_YIN.pdf)

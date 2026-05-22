@@ -1,6 +1,4 @@
 #![feature(random)]
-#![feature(sort_floats)]
-#![feature(iter_map_windows)]
 
 use std::path::Path;
 
@@ -64,6 +62,7 @@ fn save_image(image: SimpleImage, path: &Path) -> std::io::Result<()> {
     Ok(())
 }
 
+#[cfg(test)]
 mod tests {
     use super::*;
 

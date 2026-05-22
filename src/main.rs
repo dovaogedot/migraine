@@ -1,4 +1,6 @@
 #![feature(random)]
+#![feature(sort_floats)]
+#![feature(iter_map_windows)]
 
 use std::path::Path;
 
@@ -60,4 +62,55 @@ fn save_image(image: SimpleImage, path: &Path) -> std::io::Result<()> {
         .map_err(std::io::Error::other)?;
 
     Ok(())
+}
+
+mod tests {
+    use super::*;
+
+    struct ScaleTest {
+        path: &'static str,
+        scale: f64,
+    }
+
+    #[test]
+    fn scale_angle() {
+        test_scale(ScaleTest {
+            path: "./samples/angel_200x200_5.4.webp",
+            scale: 5.4,
+        });
+    }
+
+    #[test]
+    fn scale_sailor() {
+        test_scale(ScaleTest {
+            path: "./samples/sailor_160x144_4.png",
+            scale: 4.0,
+        });
+    }
+
+    #[test]
+    fn scale_skull() {
+        test_scale(ScaleTest {
+            path: "./samples/skull_167x174_6.67.png",
+            scale: 6.67,
+        });
+    }
+
+    #[test]
+    fn scale_sunset() {
+        test_scale(ScaleTest {
+            path: "./samples/sunset_252x142_7.62.jpg",
+            scale: 7.62,
+        });
+    }
+
+    fn test_scale(case: ScaleTest) {
+        let image = open_image(Path::new(case.path)).unwrap();
+        let result = migraine::guess_pixel_size(&image);
+        let expected = case.scale;
+        assert!(
+            (result - expected).abs() < 0.05,
+            "expected: {expected}, got: {result}"
+        )
+    }
 }

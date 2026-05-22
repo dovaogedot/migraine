@@ -151,19 +151,29 @@ pub fn guess_pixel_size(img: &impl Image) -> f64 {
         })
         .collect();
 
+    let mut phase_min_diff = f64::MAX;
+    let mut phase_max_diff = f64::MIN;
+
     // for each column calculate difference between original graph and the one shifted by column index
-    let phase_differences: Vec<f64> = (1..avg_distances.len())
+    let phase_differences: Vec<f64> = (0..avg_distances.len() / 2)
         .map(|phase| {
-            (0..avg_distances.len())
+            let difference = (0..avg_distances.len())
                 .map(|current| {
                     avg_distances[current]
                         .sub(avg_distances[(current + phase) % avg_distances.len()])
-                        .abs()
+                        .powi(2)
                 })
                 .sum::<f64>()
-                .div(avg_distances.len() as f64)
+                .div(avg_distances.len() as f64);
+            phase_max_diff = phase_max_diff.max(difference);
+            phase_min_diff = phase_min_diff.min(difference);
+            difference
         })
         .collect();
+
+    // skip fluctuations below this threshold
+    let tolerance = (phase_max_diff - phase_min_diff) * 0.001;
+    println!("min: {}, max: {}", phase_min_diff, phase_max_diff);
 
     // find spikes where difference is the lowest
     let local_minimums: Vec<usize> = phase_differences
@@ -174,15 +184,13 @@ pub fn guess_pixel_size(img: &impl Image) -> f64 {
             let mid = w[1];
             let right = w[2];
 
-            if mid.total_cmp(&left).is_lt() && mid.total_cmp(&right).is_lt() {
+            if left.sub(mid).gt(&tolerance) && right.sub(mid).gt(&tolerance) {
                 Some(i + 1)
             } else {
                 None
             }
         })
         .collect();
-
-    println!("{}", local_minimums.len());
 
     // sum up distances between spikes
     let pixel_size_sum = local_minimums
@@ -191,7 +199,7 @@ pub fn guess_pixel_size(img: &impl Image) -> f64 {
         .sum::<usize>() as f64;
 
     // get average distance
-    let pixel_size = pixel_size_sum.div(local_minimums.len() as f64);
+    let pixel_size = pixel_size_sum.div((local_minimums.len() - 1) as f64);
 
     pixel_size
 }

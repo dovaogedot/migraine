@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub enum MigraineError {
     SuppliedBothDimensionsAndScale,
     ImageError(image_lib::ImageError),

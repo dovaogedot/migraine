@@ -27,6 +27,7 @@ migraine -h
 ```
 
 ## Examples
+
 |Before|After|
 |-|-|
 |![Before](./samples/angel_200x200_5.4.webp)|![After](./samples/angel_200x200_5.4.webp_downsampled.bmp)|

@@ -4,10 +4,7 @@ use std::{
 };
 
 use crate::{
-    algorithm::{kmeans::Centroid, kmeans_pp::kmeans_pp},
-    downsample::{Downsampler, SamplePattern},
-    error::MigraineError,
-    types::{Color, Image, Palette, SimpleImage},
+    algorithm::{ autocorrelation::{ACF, AMDF, Period, YIN}, kmeans::Centroid, kmeans_pp::kmeans_pp}, downsample::{Downsampler, SamplePattern}, error::MigraineError, types::{Color, Image, Palette, SimpleImage}
 };
 
 pub struct MigraineResult {
@@ -110,9 +107,7 @@ pub fn reduce(colors: &[Color], palette_size: u32) -> Palette {
     Palette::new(palette)
 }
 
-/// Guesses pixel size by shifting image horizontally and finding phases with smallest differences.
-///
-/// Turns out it's a variation of AMDF (Average Magnitude Difference Function) + Autocorrelation (YIN Algorithm)
+/// Guesses pixel size using YIN autocorrelation function.
 ///
 /// TODO: cleanup space and time complexity
 pub fn guess_pixel_size(img: &impl Image) -> f64 {
@@ -151,55 +146,5 @@ pub fn guess_pixel_size(img: &impl Image) -> f64 {
         })
         .collect();
 
-    let mut phase_min_diff = f64::MAX;
-    let mut phase_max_diff = f64::MIN;
-
-    // for each column calculate difference between original graph and the one shifted by column index
-    let phase_differences: Vec<f64> = (0..avg_distances.len() / 2)
-        .map(|phase| {
-            let difference = (0..avg_distances.len())
-                .map(|current| {
-                    avg_distances[current]
-                        .sub(avg_distances[(current + phase) % avg_distances.len()])
-                        .powi(2)
-                })
-                .sum::<f64>()
-                .div(avg_distances.len() as f64);
-            phase_max_diff = phase_max_diff.max(difference);
-            phase_min_diff = phase_min_diff.min(difference);
-            difference
-        })
-        .collect();
-
-    // skip fluctuations below this threshold
-    let tolerance = (phase_max_diff - phase_min_diff) * 0.001;
-    println!("min: {}, max: {}", phase_min_diff, phase_max_diff);
-
-    // find spikes where difference is the lowest
-    let local_minimums: Vec<usize> = phase_differences
-        .windows(3)
-        .enumerate()
-        .filter_map(|(i, w)| {
-            let left = w[0];
-            let mid = w[1];
-            let right = w[2];
-
-            if left.sub(mid).gt(&tolerance) && right.sub(mid).gt(&tolerance) {
-                Some(i + 1)
-            } else {
-                None
-            }
-        })
-        .collect();
-
-    // sum up distances between spikes
-    let pixel_size_sum = local_minimums
-        .windows(2)
-        .map(|w| w[1] - w[0])
-        .sum::<usize>() as f64;
-
-    // get average distance
-    let pixel_size = pixel_size_sum.div((local_minimums.len() - 1) as f64);
-
-    pixel_size
+    YIN::period(&avg_distances)
 }

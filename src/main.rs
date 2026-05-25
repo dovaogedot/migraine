@@ -1,4 +1,5 @@
 #![feature(random)]
+#![feature(stmt_expr_attributes)]
 
 use std::path::Path;
 
@@ -63,7 +64,9 @@ fn save_image(image: SimpleImage, path: &Path) -> std::io::Result<()> {
 }
 
 #[cfg(test)]
-mod tests {
+mod scale {
+    use std::ops::{Add, Div};
+
     use super::*;
 
     struct ScaleTest {
@@ -72,34 +75,34 @@ mod tests {
     }
 
     #[test]
-    fn scale_angle() {
+    fn angle() {
         test_scale(ScaleTest {
             path: "./samples/angel_200x200_5.4.webp",
-            scale: 5.4,
+            scale: (1080_f64 / 200.0).add(1080.0 / 200.0).div(2.0),
         });
     }
 
     #[test]
-    fn scale_sailor() {
+    fn sailor() {
         test_scale(ScaleTest {
             path: "./samples/sailor_160x144_4.png",
-            scale: 4.0,
+            scale: (640_f64 / 160.0).add(576.0 / 144.0).div(2.0),
         });
     }
 
     #[test]
-    fn scale_skull() {
+    fn skull() {
         test_scale(ScaleTest {
             path: "./samples/skull_167x174_6.67.png",
-            scale: 6.67,
+            scale: (1114_f64 / 167.0).add(1160.0 / 174.0).div(2.0),
         });
     }
 
     #[test]
-    fn scale_sunset() {
+    fn sunset() {
         test_scale(ScaleTest {
             path: "./samples/sunset_252x142_7.62.jpg",
-            scale: 7.62,
+            scale: (1920_f64 / 252.0).add(1080.0 / 142.0).div(2.0),
         });
     }
 
@@ -107,9 +110,7 @@ mod tests {
         let image = open_image(Path::new(case.path)).unwrap();
         let result = migraine::guess_pixel_size(&image);
         let expected = case.scale;
-        assert!(
-            (result - expected).abs() < 0.05,
-            "expected: {expected}, got: {result}"
-        )
+        println!("expected: {expected}, got: {result}");
+        assert!((result - expected).abs() < 0.05)
     }
 }

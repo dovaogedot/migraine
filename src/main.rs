@@ -1,15 +1,11 @@
 #![feature(random)]
-#![feature(stmt_expr_attributes)]
 
 use std::path::Path;
 
 use clap::Parser;
-use image_lib::{DynamicImage, RgbImage};
+use image_lib::{DynamicImage, Rgb32FImage};
 
-use crate::{
-    args::MigraineArgs,
-    types::{Image, SimpleImage},
-};
+use crate::args::MigraineArgs;
 
 mod algorithm;
 mod args;
@@ -21,10 +17,10 @@ mod types;
 fn main() -> std::io::Result<()> {
     let args = MigraineArgs::parse();
 
-    let image = open_image(&args.path)?;
+    let image = open_image(&args.path)?.to_rgb32f();
 
     let result = migraine::restore(
-        image,
+        &image,
         args.scale,
         args.width,
         args.height,
@@ -37,30 +33,21 @@ fn main() -> std::io::Result<()> {
 
     let new_path_str = format!("{}_downsampled.bmp", args.path.to_string_lossy());
     let new_path = Path::new(&new_path_str);
-    save_image(result.image, &new_path)?;
+    save_image(&result.image, &new_path)?;
     Ok(())
 }
 
 fn open_image(path: &Path) -> std::io::Result<DynamicImage> {
-    Ok(image_lib::ImageReader::open(path)?
+    image_lib::ImageReader::open(path)?
         .with_guessed_format()?
         .decode()
-        .unwrap())
+        .map_err(|e| std::io::Error::other(format!("Could not decode image at path '{:?}'. {}", path, e)))
 }
 
-fn save_image(image: SimpleImage, path: &Path) -> std::io::Result<()> {
-    let result_width = image.width();
-    let result_height = image.height();
-    let buffer = image.into_buffer();
-
-    let rgb_image = RgbImage::from_raw(result_width, result_height, buffer)
-        .expect("Buffer length does not agree with provided dimensions");
-
-    rgb_image
+fn save_image(image: &Rgb32FImage, path: &Path) -> std::io::Result<()> {
+    image
         .save_with_format(path, image_lib::ImageFormat::Bmp)
-        .map_err(std::io::Error::other)?;
-
-    Ok(())
+        .map_err(std::io::Error::other)
 }
 
 #[cfg(test)]
@@ -101,13 +88,13 @@ mod scale {
     #[test]
     fn sunset() {
         test_scale(ScaleTest {
-            path: "./samples/sunset_252x142_7.62.jpg",
+            path: "./samples/sunset_252x142_7.61.jpg",
             scale: (1920_f64 / 252.0).add(1080.0 / 142.0).div(2.0),
         });
     }
 
     fn test_scale(case: ScaleTest) {
-        let image = open_image(Path::new(case.path)).unwrap();
+        let image = open_image(Path::new(case.path)).unwrap().to_rgb32f();
         let result = migraine::guess_pixel_size(&image);
         let expected = case.scale;
         println!("expected: {expected}, got: {result}");

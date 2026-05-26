@@ -1,105 +1,69 @@
 use std::ops::Sub;
 
+use image_lib::Rgb;
+
 use crate::algorithm::kmeans::{Centroid, Distance, Same};
 
-/// Wrapper over RGB color with some utility functions.
-///
-/// # Examples
-///
-/// ```
-/// let red = Color { r: 255.0, g: 0.0, b: 0.0 };
-/// let green = Color { r: 0.0, g: 255.0, b: 0.0 };
-/// let blue = Color { r: 0.0, g: 0.0, b: 255.0 };
-/// let yellow = Color::new(127.0, 127.0, 0.0);
-/// let cyan = Color::new(0.0, 127.0, 127.0);
-/// let magenta = Color::new(127.0, 0.0, 127.0);
-///
-/// assert!(yellow.distance(&red) < yellow.distance(&blue));
-/// assert_eq!(yellow.to_rgb_string(), "(127, 127,   0)");
-/// assert_eq!(cyan.to_hex_string(), "#007f7f");
-/// ```
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Color {
-    pub r: f64,
-    pub g: f64,
-    pub b: f64,
+impl Centroid for Rgb<f64> {
+    fn centroid(cluster: &[Self]) -> Self {
+        let (r, g, b) = cluster
+            .iter()
+            .map(|x| x.0)
+            .fold((0.0, 0.0, 0.0), |(r_sum, g_sum, b_sum), [r, g, b]| {
+                (r_sum + r, g_sum + g, b_sum + b)
+            });
+        let total = cluster.len() as f64;
+        [r / total, g / total, b / total].into()
+    }
 }
 
-impl Color {
-    pub fn new(r: f64, g: f64, b: f64) -> Self {
-        Color { r, g, b }
-    }
-
-    pub fn to_rgb_string(&self) -> String {
-        format!(
-            "({:3}, {:3}, {:3})",
-            self.r.round() as u32,
-            self.g.round() as u32,
-            self.b.round() as u32,
-        )
-    }
-
-    pub fn to_hex_string(&self) -> String {
-        format!(
-            "#{:02x}{:02x}{:02x}",
-            self.r.round() as u32,
-            self.g.round() as u32,
-            self.b.round() as u32,
-        )
-    }
-
-    pub fn distance(&self, other: &Self) -> f64 {
-        self.simple_distance(other)
-    }
-
-    fn simple_distance(&self, other: &Self) -> f64 {
-        let r = self.r - other.r;
-        let g = self.g - other.g;
-        let b = self.b - other.b;
+impl Distance for Rgb<f64> {
+    fn distance(this: &Self, that: &Self) -> f64 {
+        let r = this[0] - that[0];
+        let g = this[1] - that[1];
+        let b = this[2] - that[2];
         ((r * r) * 0.3 + (g * g) * 0.59 + (b * b) * 0.11).sqrt()
     }
 }
 
-impl Centroid for Color {
-    fn centroid(cluster: &[Self]) -> Self {
-        let (r, g, b) = cluster
-            .iter()
-            .fold((0.0, 0.0, 0.0), |(r, g, b), c| (r + c.r, g + c.g, b + c.b));
-        let total = cluster.len() as f64;
-        Color::new(r / total, g / total, b / total)
+impl Distance for Rgb<f32> {
+    fn distance(this: &Self, that: &Self) -> f64 {
+        let r = (this[0] - that[0]) as f64;
+        let g = (this[1] - that[1]) as f64;
+        let b = (this[2] - that[2]) as f64;
+        ((r * r) * 0.3 + (g * g) * 0.59 + (b * b) * 0.11).sqrt()
     }
 }
 
-impl Distance for Color {
-    fn distance(a: &Self, b: &Self) -> f64 {
-        a.distance(b)
-    }
-}
-
-impl Same for Color {
-    fn same_clusters(a: &[Self], b: &[Self]) -> bool {
-        if a.len() != b.len() {
+impl Same for Rgb<f64> {
+    fn same_clusters(this: &[Self], that: &[Self]) -> bool {
+        if this.len() != that.len() {
             return false;
         }
 
-        a.iter().zip(b).all(|(a, b)| {
-            a.r.sub(b.r).abs() < f64::EPSILON
-                && a.g.sub(b.g).abs() < f64::EPSILON
-                && a.b.sub(b.b).abs() < f64::EPSILON
+        this.iter().zip(that).all(|(a, b)| {
+            a[0].sub(b[0]).abs() < f64::EPSILON
+                && a[1].sub(b[1]).abs() < f64::EPSILON
+                && a[2].sub(b[2]).abs() < f64::EPSILON
         })
     }
 }
 
-impl std::fmt::Display for Color {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} {}", self.to_hex_string(), self.to_rgb_string())
-    }
+pub fn to_rgb_string(color: &Rgb<f64>) -> String {
+    format!("({:3}, {:3}, {:3})", color[0], color[1], color[2],)
 }
 
-impl From<(f64, f64, f64)> for Color {
-    fn from((r, g, b): (f64, f64, f64)) -> Self {
-        Color::new(r, g, b)
-    }
+pub fn to_hex_string(color: &Rgb<f64>) -> String {
+    format!(
+        "#{:02x}{:02x}{:02x}",
+        color[0].round() as u32,
+        color[1].round() as u32,
+        color[2].round() as u32,
+    )
+}
+
+pub fn to_string(color: &Rgb<f64>) -> String {
+    format!("{} {}", to_hex_string(color), to_rgb_string(color))
 }
 
 #[cfg(test)]
@@ -108,36 +72,36 @@ mod tests {
 
     #[test]
     fn rgb_string() {
-        let color = Color::new(255.0, 127.0, 64.0);
-        let rgb_string = color.to_rgb_string();
+        let color: Rgb<f64> = [255.0, 127.0, 64.0].into();
+        let rgb_string = to_rgb_string(&color);
         assert_eq!(rgb_string, "(255, 127,  64)");
     }
 
     #[test]
     fn hex_string() {
-        let color = Color::new(255.0, 127.0, 64.0);
-        let hex_string = color.to_hex_string();
+        let color: Rgb<f64> = [255.0, 127.0, 64.0].into();
+        let hex_string = to_hex_string(&color);
         assert_eq!(hex_string, "#ff7f40");
     }
 
     #[test]
     fn distance() {
-        let yellow = Color::new(250.0, 250.0, 10.0);
-        let red = Color::new(250.0, 10.0, 10.0);
-        let blue = Color::new(10.0, 10.0, 250.0);
+        let yellow: Rgb<f64> = [250.0, 250.0, 10.0].into();
+        let red: Rgb<f64> = [250.0, 10.0, 10.0].into();
+        let blue: Rgb<f64> = [10.0, 10.0, 250.0].into();
 
-        let dist_to_red = yellow.distance(&red);
-        let dist_to_blue = yellow.distance(&blue);
+        let dist_to_red = Distance::distance(&yellow, &red);
+        let dist_to_blue = Distance::distance(&yellow, &blue);
 
         assert!(dist_to_red < dist_to_blue)
     }
 
     #[test]
     fn distance_same_color_0() {
-        let a = Color::new(220.0, 200.0, 180.0);
-        let b = Color::new(220.0, 200.0, 180.0);
+        let a: Rgb<f64> = [220.0, 200.0, 180.0].into();
+        let b: Rgb<f64> = [220.0, 200.0, 180.0].into();
 
-        let dist_ab = a.distance(&b);
+        let dist_ab = Distance::distance(&a, &b);
 
         assert!(dist_ab < f64::EPSILON)
     }

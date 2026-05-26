@@ -1,20 +1,28 @@
 use std::{
-    ops::{Div, Sub},
+    ops::Div,
     time::{Duration, Instant},
 };
 
+use image_lib::{Rgb, Rgb32FImage};
+
 use crate::{
-    algorithm::{ autocorrelation::{ACF, AMDF, Period, YIN}, kmeans::Centroid, kmeans_pp::kmeans_pp}, downsample::{Downsampler, SamplePattern}, error::MigraineError, types::{Color, Image, Palette, SimpleImage}
+    algorithm::{
+        autocorrelation::{Period, YIN},
+        kmeans::Distance,
+    },
+    downsample::{Downsampler, SamplePattern},
+    error::MigraineError,
+    types::palette::Palette,
 };
 
 pub struct MigraineResult {
-    pub image: SimpleImage,
+    pub image: Rgb32FImage,
     pub palette: Palette,
     pub time_spent: Duration,
 }
 
 pub fn restore(
-    image: impl Image,
+    image: &Rgb32FImage,
     scale: Option<f64>,
     width: Option<u32>,
     height: Option<u32>,
@@ -69,82 +77,71 @@ pub fn restore(
 
     let start = Instant::now();
 
-    let downsampled: SimpleImage =
-        downsampler.downsample(&image, target_width, target_height, sample_pattern);
+    let downsampled = downsampler.downsample(&image, target_width, target_height, sample_pattern);
 
-    let (final_image, palette): (SimpleImage, Palette) = if reduce_palette {
-        let palette = reduce(
-            &downsampled.pixels,
-            colors.expect("Guessing number of colors is not yet implemented"),
-        );
-        let reduced: Vec<Color> = downsampled
-            .pixels
-            .into_iter()
-            .map(|p| palette.closest_to(&p))
+    let palette = Palette::new(
+        downsampled
+            .pixels()
+            .map(|p| Rgb::<f64>::from([p.0[0] as f64, p.0[1] as f64, p.0[2] as f64]))
+            .collect(),
+    );
+
+    let (downsampled, palette) = if reduce_palette {
+        let reduced_palette = palette.reduced(colors.expect("Guessing number of colors is not yet implemented"));
+
+        let posterized_pixels: Vec<f32> = palette
+            .colors
+            .iter()
+            .flat_map(|p| {
+                let color = reduced_palette.closest_to(&p);
+                [color.0[0] as f32, color.0[1] as f32, color.0[2] as f32]
+            })
             .collect();
-
-        (SimpleImage::new(reduced, downsampled.scansize), palette)
+        (
+            Rgb32FImage::from_raw(downsampled.width(), downsampled.height(), posterized_pixels).unwrap(),
+            reduced_palette,
+        )
     } else {
-        let colors = downsampled.pixels.clone();
-        (downsampled, Palette::new(colors))
+        (downsampled, palette)
     };
 
     let total = start.elapsed();
 
     Ok(MigraineResult {
         palette: palette,
-        image: final_image,
+        image: downsampled,
         time_spent: total,
     })
 }
 
-pub fn reduce(colors: &[Color], palette_size: u32) -> Palette {
-    let palette: Vec<Color> = kmeans_pp(palette_size as usize, colors)
-        .iter()
-        .map(|c| Color::centroid(c))
-        .collect();
-
-    Palette::new(palette)
-}
-
-/// Guesses pixel size using YIN autocorrelation function.
-///
-/// TODO: cleanup space and time complexity
-pub fn guess_pixel_size(img: &impl Image) -> f64 {
-    let img_width = img.width();
-    let img_height = img.height();
-    let rows_to_sample = img.height().min(256);
-    let dy = (img.height() / rows_to_sample) as usize;
-
-    let rows: Vec<Vec<Color>> = (0..img_height)
-        .step_by(dy)
-        .map(|y| {
-            (0..img_width)
-                .map(move |x| img.sample(x, y.clone()))
-                .collect()
-        })
-        .collect();
+/// Guesses pixel size by treating image as a function of difference between two
+/// adjacent pixels and then applying YIN autocorrelation function to find its
+/// perid.
+pub fn guess_pixel_size(image: &Rgb32FImage) -> f64 {
+    let img_width = image.width();
+    let img_height = image.height();
+    let rows_to_sample = img_height.min(256);
+    let dy = (img_height / rows_to_sample) as usize;
 
     // map pixel in each row to its color distance with the one next to it
-    let distances: Vec<Vec<f64>> = rows
-        .iter()
-        .map(|row| {
-            let mut r: Vec<f64> = row.windows(2).map(|w| w[0].distance(&w[1])).collect();
-            r.push(row[row.len() - 1].distance(&row[0]));
-            r
-        })
-        .collect();
+    let distances: Vec<f64> = (0..img_width)
+        .map(|x| {
+            (0..img_height)
+                .step_by(dy)
+                .map(|y| {
+                    let left = image.get_pixel(x, y);
+                    let right = if x + 1 == img_width {
+                        image.get_pixel(0, y)
+                    } else {
+                        image.get_pixel(x + 1, y)
+                    };
 
-    // average distance to next pixel color in each column
-    let avg_distances: Vec<f64> = (0..distances[0].len())
-        .map(|i| {
-            distances
-                .iter()
-                .map(|row| row[i])
+                    Distance::distance(left, right)
+                })
                 .sum::<f64>()
-                .div(distances.len() as f64)
+                .div(rows_to_sample as f64)
         })
         .collect();
 
-    YIN::period(&avg_distances)
+    YIN::period(&distances)
 }

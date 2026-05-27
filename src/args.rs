@@ -24,11 +24,11 @@ pub struct MigraineArgs {
     #[arg(short, long, action = clap::ArgAction::Count)]
     pub verbose: u8,
 
-    /// If reduce palette then to that amount of colors
+    /// Reduce palette to that amount of colors
     #[arg(short, long)]
     pub colors: Option<u32>,
 
-    /// Try to approximate original palette
+    /// Reduce palette to that amount of colors
     #[arg(short, long)]
-    pub reduce_palette: bool,
+    pub max_colors: Option<u32>,
 }

@@ -39,3 +39,5 @@ migraine -h
 
 - [AMDF (Average Magnitude Difference Function)](http://notedetection.weebly.com/amdf.html)
 - [YIN, a fundamental frequency estimator](http://audition.ens.fr/adc/pdf/2002_JASA_YIN.pdf)
+- [k-means clustering](https://en.wikipedia.org/wiki/K-means_clustering)
+- [HDBSCAN](https://hdbscan.readthedocs.io/en/latest/how_hdbscan_works.html)

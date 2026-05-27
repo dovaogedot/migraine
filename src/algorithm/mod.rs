@@ -1,3 +1,5 @@
+#[allow(unused)]
 pub mod kmeans;
-pub mod kmeans_pp;
+
+#[allow(unused)]
 pub mod autocorrelation;

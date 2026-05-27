@@ -44,6 +44,12 @@ pub trait Period {
 
 pub struct ACF;
 impl ACF {
+    /// Maps each value to its product with the lagged one. Results in peaks where
+    /// lag approaches period.
+    ///
+    /// # Parameters
+    ///
+    ///
     fn acf(x: &[f64], t: usize, tau: usize, w: usize) -> f64 {
         let len = x.len();
         (t + 1..=t + w).map(|j| x[j % len] * x[(j + tau) % len]).sum::<f64>()
@@ -62,6 +68,8 @@ impl Period for ACF {
 
 pub struct AMDF;
 impl AMDF {
+    /// Maps each value to its absolute difference with the lagged one. Results in
+    /// valleys where lag approaches period.
     fn amdf(x: &[f64], m: usize) -> f64 {
         let len = x.len();
 
@@ -84,12 +92,17 @@ impl Period for AMDF {
 
 pub struct YIN;
 impl YIN {
+    /// Maps each value to its squared difference with the lagged one. Results in
+    /// valleys where lag approaches period.
     fn yin(x: &[f64], tau: usize, w: usize) -> f64 {
         let len = x.len();
-
         (1..=w).map(|j| (x[j % len] - x[(j + tau) % len]).powi(2)).sum::<f64>()
     }
 
+    /// Cumulative mean normalized difference function.
+    ///
+    /// Like the normal one, but divides each value by its average over previous
+    /// values.
     fn yin_cmndf(differences: &[f64]) -> Vec<f64> {
         let mut result = vec![1.0];
         let mut running_sum = 0.0;

@@ -1,43 +1,46 @@
-use std::marker::PhantomData;
-
-use image_lib::Rgb;
+use image::Rgb;
 
 use crate::{
-    algorithm::{
-        kmeans::{Centroid, Distance},
-        kmeans_pp::kmeans_pp,
-    },
-    types::color::to_string,
+    algorithm::kmeans::{Distance, kmeans_elbow, kmeans_pp},
+    color::rgb::to_string,
 };
 
-#[non_exhaustive]
 #[derive(Clone, Debug, Default)]
 pub struct Palette {
-    pub colors: Vec<Rgb<f64>>,
-    _private: PhantomData<bool>,
+    colors: Vec<Rgb<f64>>,
 }
 
 impl Palette {
     pub fn new(colors: Vec<Rgb<f64>>) -> Self {
         assert!(colors.len() > 0, "Palette must contain at least one color");
-        Palette {
-            colors,
-            _private: PhantomData,
-        }
+        Palette { colors }
+    }
+
+    pub fn colors(&self) -> &[Rgb<f64>] {
+        &self.colors
     }
 
     pub fn closest_to(&self, color: &Rgb<f64>) -> Rgb<f64> {
         self.colors
             .iter()
-            .min_by(|&c1, &c2| Distance::distance(c1, color).total_cmp(&Distance::distance(c2, color)))
+            .min_by(|&c1, &c2| c1.distance(color).total_cmp(&c2.distance(color)))
             .unwrap_or(&self.colors[0])
             .clone()
     }
 
     pub fn reduced(&self, palette_size: u32) -> Palette {
         let palette: Vec<Rgb<f64>> = kmeans_pp(palette_size as usize, &self.colors)
-            .iter()
-            .map(|c| Centroid::centroid(c))
+            .iter_mut()
+            .map(|c| c.centroid())
+            .collect();
+
+        Palette::new(palette)
+    }
+
+    pub fn reduced_auto(&self, max_colors: Option<u32>) -> Palette {
+        let palette: Vec<Rgb<f64>> = kmeans_elbow(&self.colors, max_colors)
+            .iter_mut()
+            .map(|c| c.centroid())
             .collect();
 
         Palette::new(palette)

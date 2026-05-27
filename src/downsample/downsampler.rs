@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use image_lib::Rgb32FImage;
+use image::Rgb32FImage;
 
 use crate::downsample::SamplePattern;
 
@@ -9,6 +9,10 @@ pub struct Downsampler {
 }
 
 impl Downsampler {
+    pub fn new() -> Self {
+        Downsampler { _private: PhantomData }
+    }
+
     pub fn downsample(
         &self,
         image: &Rgb32FImage,
@@ -24,9 +28,9 @@ impl Downsampler {
             let mut sum_g = 0f64;
             let mut sum_b = 0f64;
 
-            let total_weight: f64 = sample_pattern.points.iter().map(|p| p.weight).sum();
+            let total_weight: f64 = sample_pattern.points().iter().map(|p| p.weight).sum();
 
-            for point in &sample_pattern.points {
+            for point in sample_pattern.points() {
                 let sample_pos_x = x as f64 * pixel_w + pixel_w * 0.5 * (point.dx + 1.0);
                 let sample_pos_y = y as f64 * pixel_h + pixel_h * 0.5 * (point.dy + 1.0);
                 let sample_color = image.get_pixel(sample_pos_x.round() as u32, sample_pos_y.round() as u32);
@@ -41,10 +45,6 @@ impl Downsampler {
             let b = sum_b / total_weight;
             [r as f32, g as f32, b as f32].into()
         })
-    }
-
-    pub fn new() -> Self {
-        Downsampler { _private: PhantomData }
     }
 }
 

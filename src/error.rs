@@ -1,12 +1,12 @@
 #[derive(Debug)]
 pub enum MigraineError {
     SuppliedBothDimensionsAndScale,
-    ImageError(image_lib::ImageError),
+    ImageError(image::ImageError),
     IoError(std::io::Error),
 }
 
-impl From<image_lib::ImageError> for MigraineError {
-    fn from(value: image_lib::ImageError) -> Self {
+impl From<image::ImageError> for MigraineError {
+    fn from(value: image::ImageError) -> Self {
         MigraineError::ImageError(value)
     }
 }

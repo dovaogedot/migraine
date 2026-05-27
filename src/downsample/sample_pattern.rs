@@ -1,7 +1,5 @@
-use std::marker::PhantomData;
-
 /// A single point in a sub-sampling pattern.
-/// 
+///
 /// ```
 ///  (-1, 1) +---------+ (1, 1)
 ///          |    |    |
@@ -34,8 +32,7 @@ impl From<&(f64, f64, f64)> for SamplePoint {
 /// Pattern for sub-pixel sampling.
 pub struct SamplePattern {
     /// Array of sampling points within the pixel.
-    pub points: Vec<SamplePoint>,
-    _private: PhantomData<bool>,
+    points: Vec<SamplePoint>,
 }
 
 impl Default for SamplePattern {
@@ -44,35 +41,29 @@ impl Default for SamplePattern {
     }
 }
 
-#[allow(dead_code)]
 impl SamplePattern {
     pub fn new(points: Vec<SamplePoint>) -> Self {
-        assert!(
-            points.len() > 0,
-            "Sampling pattern must have at least one position"
-        );
-        SamplePattern {
-            points,
-            _private: PhantomData,
-        }
+        assert!(points.len() > 0, "Sampling pattern must have at least one position");
+        SamplePattern { points }
     }
 
+    pub fn points(&self) -> &[SamplePoint] {
+        &self.points
+    }
+
+    #[allow(unused)]
     pub fn weighted_center() -> Self {
         let d = 0.5;
-        let points = [
-            (-d, d, 1.0),
-            (d, d, 1.0),
-            (-d, -d, 1.0),
-            (d, -d, 1.0),
-            (0.0, 0.0, 10.0),
-        ];
+        let points = [(-d, d, 1.0), (d, d, 1.0), (-d, -d, 1.0), (d, -d, 1.0), (0.0, 0.0, 10.0)];
         SamplePattern::from(points.as_slice())
     }
 
+    #[allow(unused)]
     pub fn center() -> Self {
         SamplePattern::new(vec![SamplePoint::new(0.0, 0.0, 1.0)])
     }
 
+    #[allow(unused)]
     pub fn grid() -> Self {
         let d = 0.5;
         let points = [(-d, d, 0.25), (d, d, 0.25), (-d, -d, 0.25), (d, -d, 0.25)];

@@ -9,4 +9,6 @@ keywords = ["image", "resize", "pixelart", "pixel", "art"]
 
 [dependencies]
 clap = { version = "4.6.1", features = ["derive"] }
-image_lib = { package = "image", version = "0.25.10" }
+fastrand = "2.4.1"
+image = "0.25.10"
+rayon = "1.12.0"

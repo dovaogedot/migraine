@@ -4,11 +4,9 @@ Migraine is a tool that restores pixel art from upscaled and/or compressed state
 
 ## Introduction
 
-My girlfriend loves crocheting. And she loves to crochet pixel art. Unfortunately, most pixel art on the internet is not "pixel-perfect" in a sence that it's upscaled and pixel edges are a blurry mess. But each column in crochet has to correspond to a single pixel with defined color.
+My girlfriend loves crocheting. And she loves to crochet pixel art. Unfortunately, most pixel art on the internet is not "pixel-perfect" in a sense that it's upscaled and pixel edges are a blurry mess. But each column in crochet has to correspond to a single pixel with defined color.
 
-Finally, I got tired of counting pixel art resolution, resizing, cropping, posterizing, fixing colors and so on. So decided to create a simple CLI tool that will do all that work for me with a single instruction.
-
-Initial version was written in Scala, but the startup time was greater than the image processing part... So I switched to Rust and got almost 20x boost in execution speed.
+I got tired of counting pixel art resolution, resizing, cropping, posterizing, fixing colors and so on. So I have decided to create a simple CLI tool that will do all that work for me with a single instruction.
 
 ## Usage
 
@@ -28,12 +26,14 @@ migraine -h
 
 ## Examples
 
+All examples can be seen in `samples` folder.
+
 |Before|After|
 |-|-|
-|![Before](./samples/angel_200x200_5.4.webp)|![After](./samples/angel_200x200_5.4.webp_downsampled.bmp)|
-|![Before](./samples/sailor_160x144_4.png)|![After](./samples/sailor_160x144_4.png_downsampled.bmp)|
-|![Before](./samples/skull_167x174_6.67.png)|![After](./samples/skull_167x174_6.67.png_downsampled.bmp)|
-|![Before](./samples/sunset_252x142_7.62.jpg)|![After](./samples/sunset_252x142_7.62.jpg_downsampled.bmp)|
+|![Before](./samples/angel_200x200_5.4_4.webp)|![After](./samples/angel_200x200_5.4_4.webp_downsampled.bmp)|
+|![Before](./samples/sailor_160x144_4_4.png)|![After](./samples/sailor_160x144_4_4.png_downsampled.bmp)|
+|![Before](./samples/skull_167x174_6.67_4.png)|![After](./samples/skull_167x174_6.67_4.png_downsampled.bmp)|
+|![Before](./samples/sunset_252x142_7.61_x.jpg)|![After](./samples/sunset_252x142_7.61_x.jpg_downsampled.bmp)|
 
 ## References
 

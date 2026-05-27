@@ -14,6 +14,8 @@ pub fn send_to_visualizer(image: &[[f32; 3]]) {
             "@-",
         ])
         .stdin(Stdio::piped())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
         .spawn()
         .unwrap();
 

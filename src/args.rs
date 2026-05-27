@@ -28,7 +28,7 @@ pub struct MigraineArgs {
     #[arg(short, long)]
     pub colors: Option<u32>,
 
-    /// Reduce palette to that amount of colors
+    /// Pick best amount of palette colors up to this number
     #[arg(short, long)]
     pub max_colors: Option<u32>,
 }

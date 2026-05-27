@@ -53,6 +53,8 @@
 //! let clusters_elbow = kmeans_elbow(&points, Some(3));
 //! ```
 
+use std::num::NonZero;
+
 use rayon::iter::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator};
 
 /// A trait for types capable of computing the geometric center (centroid) of a group of items.
@@ -267,11 +269,16 @@ pub fn kmeans_elbow<P: Centroid + Distance + Same + Clone + Sync + Send>(
     let min_k = 2;
 
     let max_k: usize = match max_k {
-        None => points.len(),
+        None => {
+            use std::thread::available_parallelism;
+            available_parallelism()
+                .unwrap_or(NonZero::<usize>::new(16).unwrap())
+                .get()
+        },
         Some(k) => points.len().min(k as usize),
     };
-    let range_len = max_k - min_k + 1;
-    let mut sse: Vec<f64> = (min_k..max_k+1)
+
+    let mut sse: Vec<f64> = (min_k..max_k + 1)
         .into_par_iter()
         .map(|k| {
             (0..4)
@@ -306,13 +313,13 @@ pub fn kmeans_elbow<P: Centroid + Distance + Same + Clone + Sync + Send>(
         .collect::<Vec<_>>()
         .join("\n");
 
-    println!("SSE:\n{}", sse_str);
+    println!("Error % for palette size (lower == better):\n{}", sse_str);
 
     let mut best_k_idx = 0;
     let mut min_curvature = f64::MAX;
 
     // Find the elbow using second derivative
-    for i in 1..(range_len - 1) {
+    for i in 1..(max_k - min_k) {
         let dyl = sse[i] - sse[i - 1];
         let dyr = sse[i + 1] - sse[i];
         let diff = dyl - dyr;

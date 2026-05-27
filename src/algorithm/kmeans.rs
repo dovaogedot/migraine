@@ -53,7 +53,7 @@
 //! let clusters_elbow = kmeans_elbow(&points, Some(3));
 //! ```
 
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
+use rayon::iter::{IndexedParallelIterator, IntoParallelIterator, ParallelIterator};
 
 /// A trait for types capable of computing the geometric center (centroid) of a group of items.
 pub trait Centroid: Sized {
@@ -155,8 +155,10 @@ where
 
     // Will stop when recalculating centroids if they didn't change since last iteration
     let mut converged = false;
+    let mut iteration = 0;
 
     while !converged {
+        iteration += 1;
         // Clear clusters
         clusters.iter_mut().for_each(|c| c.clear());
 
@@ -263,31 +265,28 @@ pub fn kmeans_elbow<P: Centroid + Distance + Same + Clone + Sync + Send>(
     max_k: Option<u32>,
 ) -> Vec<Cluster<'_, P>> {
     let min_k = 2;
-    let max_k = match max_k {
+
+    let max_k: usize = match max_k {
         None => points.len(),
         Some(k) => points.len().min(k as usize),
     };
-
     let range_len = max_k - min_k + 1;
-
-    let results: Vec<(f64, Vec<Cluster<P>>)> = (min_k..=max_k)
+    let mut sse: Vec<f64> = (min_k..max_k+1)
         .into_par_iter()
         .map(|k| {
-            let mut clusters = kmeans_pp(k, points);
-
-            let mut local_sse = 0.0;
-            for cluster in clusters.iter_mut() {
-                let cluster_mean = cluster.centroid();
-                for &point in cluster.points() {
-                    local_sse += point.distance(&cluster_mean).powi(2);
-                }
-            }
-
-            (local_sse, clusters)
+            (0..4)
+                .map(|i| {
+                    kmeans_pp(k, points)
+                        .iter_mut()
+                        .map(|c| {
+                            let mean = c.centroid();
+                            c.points().iter().map(|p| p.distance(&mean).powi(2)).sum::<f64>()
+                        })
+                        .sum::<f64>()
+                })
+                .sum::<f64>()
         })
         .collect();
-
-    let (mut sse, mut clusters_cache): (Vec<f64>, Vec<Vec<Cluster<P>>>) = results.into_iter().unzip();
 
     // Normalize sums of squared errors
     let sse_max = sse[0];
@@ -300,6 +299,7 @@ pub fn kmeans_elbow<P: Centroid + Distance + Same + Clone + Sync + Send>(
         .iter()
         .enumerate()
         .map(|(i, x)| {
+            let x = x;
             let w = width * x;
             format!("{:2} {:.4} {}", i + min_k, x, "=".repeat(w as usize))
         })
@@ -323,5 +323,5 @@ pub fn kmeans_elbow<P: Centroid + Distance + Same + Clone + Sync + Send>(
         }
     }
 
-    clusters_cache.swap_remove(best_k_idx + 1)
+    kmeans_pp(best_k_idx + 1 + min_k, points)
 }

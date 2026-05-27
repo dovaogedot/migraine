@@ -11,6 +11,8 @@ mod downsample;
 mod error;
 mod migraine;
 mod color;
+mod visualizer;
+
 
 fn main() -> std::io::Result<()> {
     let args = MigraineArgs::parse();

@@ -13,6 +13,7 @@ use crate::{
     color::palette::Palette,
     downsample::{Downsampler, SamplePattern},
     error::MigraineError,
+    visualizer::send_to_visualizer,
 };
 
 pub struct MigraineResult {
@@ -85,6 +86,9 @@ pub fn restore(
             .map(|p| Rgb::<f64>::from([p.0[0] as f64, p.0[1] as f64, p.0[2] as f64]))
             .collect(),
     );
+
+    let data: Vec<[f32; 3]> = downsampled.pixels().map(|p| p.0).collect();
+    send_to_visualizer(&data);
 
     let reduced_palette = match colors {
         None => palette.reduced_auto(max_colors),

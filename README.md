@@ -16,7 +16,8 @@ Binary has only one required argument - path to the image.
 migraine ./image.jpg
 ```
 
-This will try its best of inferring all aspects of the image and write restored pixel art into `./image.jpg_downsampled.bmp`.
+This will try its best of inferring all aspects of the image and write restored pixel art into
+`./image.jpg_downsampled.bmp`.
 
 You can also provide optional arguments if you know exact dimensions or number of colors in original pixel art. All of the options can be viewed by running:
 

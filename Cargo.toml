@@ -7,8 +7,12 @@ description = "Restores pixel art to its original dimensions, pixelates images"
 readme = "README.md"
 keywords = ["image", "resize", "pixelart", "pixel", "art"]
 
+[features]
+default = ["visualizer"]
+visualizer = []
+
 [dependencies]
-clap = { version = "4.6.1", features = ["derive"] }
+clap = { version = "4.6.1", default-features = false, features = ["derive", "std"] }
 fastrand = "2.4.1"
-image = "0.25.10"
-rayon = "1.12.0"
+image = { version = "0.25.10", default-features = false, features = ["default-formats"] }
+rayon = { version = "1.12.0", default-features = false }

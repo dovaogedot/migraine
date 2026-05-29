@@ -313,7 +313,7 @@ pub fn kmeans_elbow<P: Centroid + Distance + Same + Clone + Sync + Send>(
         .collect::<Vec<_>>()
         .join("\n");
 
-    println!("Error % for palette size (lower == better):\n{}", sse_str);
+    log::trace!("Error % for k (lower == better):\n{}", sse_str);
 
     let mut best_k_idx = 0;
     let mut min_curvature = f64::MAX;

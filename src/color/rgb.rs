@@ -39,9 +39,7 @@ impl Distance for Rgb<f32> {
 impl Same for Rgb<f64> {
     fn same(&self, other: &Self) -> bool {
         let e = f64::EPSILON;
-        self[0].sub(other[0]).abs() < e
-            && self[1].sub(other[1]).abs() < e
-            && self[2].sub(other[2]).abs() < e
+        self[0].sub(other[0]).abs() < e && self[1].sub(other[1]).abs() < e && self[2].sub(other[2]).abs() < e
     }
 }
 

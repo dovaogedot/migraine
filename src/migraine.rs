@@ -1,152 +1,142 @@
 use std::{
-    ops::{Div, Mul},
-    time::{Duration, Instant},
+    ops::Mul,
+    path::{Path, PathBuf},
+    time::Instant,
 };
 
-use image::{Rgb, Rgb32FImage, RgbImage};
+use image::{Rgb, RgbImage};
 
 use crate::{
-    algorithm::{
-        autocorrelation::{Period, YIN},
-        kmeans::Distance,
-    },
     color::palette::Palette,
     downsample::{Downsampler, SamplePattern},
     error::MigraineError,
-    visualizer::send_to_visualizer,
+    io::IO,
+    scale::guess_pixel_size,
 };
 
-pub struct MigraineResult {
-    pub image: RgbImage,
-    pub palette: Palette,
-    pub time_spent: Duration,
-}
+pub struct Migraine;
+impl Migraine {
+    pub fn restore(
+        path: PathBuf,
+        scale: Option<f64>,
+        width: Option<u32>,
+        height: Option<u32>,
+        colors: Option<u32>,
+        max_colors: Option<u32>,
+    ) -> Result<(), MigraineError> {
+        log::debug!("Loading image...");
 
-pub fn restore(
-    image: &Rgb32FImage,
-    scale: Option<f64>,
-    width: Option<u32>,
-    height: Option<u32>,
-    colors: Option<u32>,
-    max_colors: Option<u32>,
-) -> Result<MigraineResult, MigraineError> {
-    let image_width = image.width() as f64;
-    let image_height = image.height() as f64;
+        let image = IO::open_image(&path)?.to_rgb32f();
 
-    let (scale, width, height): (f64, f64, f64) = match (scale, width, height) {
-        (None, None, None) => {
-            let s = guess_pixel_size(&image);
-            let w = image_width / s;
-            let h = image_height / s;
-            (s, w, h)
-        }
-        (None, None, Some(h)) => {
-            let h = h as f64;
-            let s = image_height / h;
-            let w = image_width / s;
-            (s, w, h)
-        }
-        (None, Some(w), None) => {
-            let w = w as f64;
-            let s = image_width / w;
-            let h = image_height / s;
-            (s, w, h)
-        }
-        (None, Some(w), Some(h)) => {
-            let w = w as f64;
-            let h = h as f64;
-            let s = (image_width / w + image_height / h) / 2.0;
-            (s, w, h)
-        }
-        (Some(s), None, None) => {
-            let w = image_width / s;
-            let h = image_height / s;
-            (s, w, h)
-        }
-        (_, _, _) => return Err(MigraineError::SuppliedBothDimensionsAndScale),
-    };
+        let image_width = image.width() as f64;
+        let image_height = image.height() as f64;
 
-    let target_width = width.round() as u32;
-    let target_height = height.round() as u32;
+        let (scale, width, height): (f64, f64, f64) = match (scale, width, height) {
+            (None, None, None) => {
+                log::warn!("Inferring pixel size programmatically...");
+                let s = guess_pixel_size(&image);
+                let w = image_width / s;
+                let h = image_height / s;
+                (s, w, h)
+            }
+            (None, None, Some(h)) => {
+                let h = h as f64;
+                let s = image_height / h;
+                let w = image_width / s;
+                (s, w, h)
+            }
+            (None, Some(w), None) => {
+                let w = w as f64;
+                let s = image_width / w;
+                let h = image_height / s;
+                (s, w, h)
+            }
+            (None, Some(w), Some(h)) => {
+                let w = w as f64;
+                let h = h as f64;
+                let s = (image_width / w + image_height / h) / 2.0;
+                (s, w, h)
+            }
+            (Some(s), None, None) => {
+                let w = image_width / s;
+                let h = image_height / s;
+                (s, w, h)
+            }
+            (_, _, _) => return Err(MigraineError::SuppliedBothDimensionsAndScale),
+        };
 
-    println!("Using scale {scale:?}");
-    println!("Target width {target_width:?}");
-    println!("Target height {target_height:?}");
+        let target_width = width.round() as u32;
+        let target_height = height.round() as u32;
 
-    let downsampler = Downsampler::default();
-    let sample_pattern = SamplePattern::default();
+        log::info!("Scale: {scale:?}");
+        log::info!("Width: {target_width:?}");
+        log::info!("Height: {target_height:?}");
 
-    let start = Instant::now();
+        let downsampler = Downsampler::default();
+        let sample_pattern = SamplePattern::default();
 
-    let downsampled = downsampler.downsample(&image, target_width, target_height, sample_pattern);
+        let start = Instant::now();
 
-    let palette = Palette::new(
-        downsampled
-            .pixels()
-            .map(|p| Rgb::<f64>::from([p.0[0] as f64, p.0[1] as f64, p.0[2] as f64]))
-            .collect(),
-    );
+        log::debug!("Downsampling...");
 
-    let data: Vec<[f32; 3]> = downsampled.pixels().map(|p| p.0).collect();
-    send_to_visualizer(&data);
+        let downsampled = downsampler.downsample(&image, target_width, target_height, sample_pattern);
 
-    let reduced_palette = match colors {
-        None => palette.reduced_auto(max_colors),
-        Some(n) => palette.reduced(n),
-    };
+        let palette = Palette::new(
+            downsampled
+                .pixels()
+                .map(|p| Rgb::<f64>::from([p.0[0] as f64, p.0[1] as f64, p.0[2] as f64]))
+                .collect(),
+        );
 
-    let posterized_pixels: Vec<u8> = palette
-        .colors()
-        .iter()
-        .flat_map(|p| {
-            let color = reduced_palette.closest_to(&p);
-            [
-                color.0[0].mul(255.0).round() as u8,
-                color.0[1].mul(255.0).round() as u8,
-                color.0[2].mul(255.0).round() as u8,
-            ]
-        })
-        .collect();
+        log::debug!("Uncompressed palette size: {}", palette.colors().len());
 
-    let restored = RgbImage::from_raw(downsampled.width(), downsampled.height(), posterized_pixels).unwrap();
+        // let data: Vec<[f32; 3]> = downsampled.pixels().map(|p| p.0).collect();
+        // send_to_visualizer(&data);
 
-    let total = start.elapsed();
+        let reduced_palette = match colors {
+            None => {
+                log::debug!("Compressing palette to best size...");
+                palette.reduced_auto(max_colors)
+            }
+            Some(n) => {
+                log::debug!("Compressing palette to {n} colors...");
+                palette.reduced(n)
+            }
+        };
 
-    Ok(MigraineResult {
-        palette: reduced_palette,
-        image: restored,
-        time_spent: total,
-    })
-}
+        log::info!("Colors: {}", reduced_palette.colors().len());
 
-/// Guesses pixel size by transforming the image into a function of differences
-/// between two adjacent pixels and then applying YIN autocorrelation function
-/// to find its perid.
-pub fn guess_pixel_size(image: &Rgb32FImage) -> f64 {
-    let img_width = image.width();
-    let img_height = image.height();
-    let rows_to_sample = img_height.min(256);
-    let dy = (img_height / rows_to_sample) as usize;
+        log::debug!("Remapping pixel colors...");
 
-    // Map pixel in each row to its color distance with the one next to it
-    let distances: Vec<f64> = (0..img_width)
-        .map(|x| {
-            (0..img_height)
-                .step_by(dy)
-                .map(|y| {
-                    let left = image.get_pixel(x, y);
-                    let right = if x + 1 == img_width {
-                        image.get_pixel(0, y)
-                    } else {
-                        image.get_pixel(x + 1, y)
-                    };
+        let posterized_pixels: Vec<u8> = palette
+            .colors()
+            .iter()
+            .flat_map(|p| {
+                let color = reduced_palette.closest_to(&p);
+                [
+                    color.0[0].mul(255.0).round() as u8,
+                    color.0[1].mul(255.0).round() as u8,
+                    color.0[2].mul(255.0).round() as u8,
+                ]
+            })
+            .collect();
 
-                    left.distance(right)
-                })
-                .sum::<f64>()
-                .div(rows_to_sample as f64)
-        })
-        .collect();
+        log::trace!("Contructing new image...");
+        let restored = RgbImage::from_raw(downsampled.width(), downsampled.height(), posterized_pixels).unwrap();
 
-    YIN::period(&distances)
+        let total = start.elapsed();
+
+        log::info!("Processing took {}ms", total.as_millis());
+
+        let new_path_str = format!("{}_downsampled.bmp", path.to_string_lossy());
+        let new_path = Path::new(&new_path_str);
+
+        log::debug!("Saving image to file...");
+
+        IO::save_image(&restored, &new_path)?;
+
+        println!("\x1b[1m{target_width}\x1b[0mx\x1b[1m{target_height} {reduced_palette}");
+
+        Ok(())
+    }
 }
